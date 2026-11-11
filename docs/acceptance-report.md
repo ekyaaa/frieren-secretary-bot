@@ -46,4 +46,26 @@ Executed via `python3 tests/run_all_tests.py`:
 ## 3. Live Deployment Status & Deferred Integrations
 
 1. **DERMAGA Live Submissions**: As required by hard boundary rules, live submissions to `jti.polinema.ac.id/dermaga` were **not** executed to prevent polluting real academic attendance records. All tests ran against verified HTML fixtures faithfully simulating DERMAGA markup and state transitions. Live production testing should be performed following the steps in `docs/runbook.md`.
-2. **Cross-Platform Installer Binaries**: The Windows `.exe` installer build is specified in `.github/workflows/agent-release.yml` for execution on GitHub Windows runners.
+---
+
+## 4. Live DERMAGA Portal Read-Only Authentication & GitHub Actions Verification
+
+### 4.1 Live Portal Inspection & Authentication
+- **Test Credentials**: Live user test credentials authorized for read-only verification (`{nim}` / `{password}`) on `https://jti.polinema.ac.id/dermaga/login`.
+- **Strict Boundary Enforced**: **Zero submissions dispatched**; no logbook records were created or modified on the live system.
+- **Portal Discovery**:
+  - The live DERMAGA portal runs CodeIgniter 3/4 with CSRF token input named `csrf_test_name` and session cookie `csrf_cookie_name`.
+  - The logbook monitoring table is identified as `<table id="tblLogbook">` with columns `['Tanggal', 'Bulan-Minggu', 'Keterangan', 'Jam Masuk', 'Jam Pulang', 'Pekerjaan', 'Lokasi', 'Status Verif', 'Aksi']`.
+- **Results**:
+  - `DermagaClient.login()` successfully extracted `csrf_test_name`, authenticated against `https://jti.polinema.ac.id/dermaga/login`, received HTTP 200, and redirected to `/dermaga/mahasiswa/dashboard`.
+  - `DermagaClient.fetch_monitoring()` fetched `/dermaga/mahasiswa/monitoring` and successfully parsed 14 historical logbook entries without creating any new entries.
+  - Enhanced both `portal_client.py` and `playwright_verifier.py` to seamlessly handle both live CodeIgniter forms (`csrf_test_name` + `#tblLogbook`) and local mock test fixtures (`_token` + `.logbook-row`).
+
+### 4.2 GitHub Actions CI Status
+- **Initial Run `43037619491`**: Failed on Step 9 (`Run Local Agent Scanner & Offline Queue Tests`) due to `NameError: name 'Optional' is not defined` in Python 3.11 runner environment.
+- **Fix Applied**: Added `Optional` to `from typing import ...` in `apps/local-agent/agent_gui.py`, moved `from datetime import datetime` to module scope in `tests/test_local_agent.py`, and added `import urllib.parse` to `tests/test_dermaga_verification.py`.
+- **Subsequent Run `43046589689`**: **SUCCESS (All steps passed, green checkmark)**.
+  - Run ID: `43046589689`
+  - Head SHA: `b4c4de7`
+  - URL: `https://github.com/ekyaaa/frieren-secretary-bot/actions/runs/43046589689`
+  - Status: `completed`, Conclusion: `success`.
