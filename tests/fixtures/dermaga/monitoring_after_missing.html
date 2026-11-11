@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitoring Logbook - DERMAGA POLINEMA</title>
+</head>
+<body>
+  <div class="user-profile">
+    <span id="current-user">student_2026001</span>
+  </div>
+  <!-- Success toast appears, but backend failed to persist the row -->
+  <div class="alert alert-success" id="flash-message">
+    Data logbook berhasil disimpan.
+  </div>
+  <div class="content-header">
+    <h3>Daftar Logbook Mahasiswa</h3>
+  </div>
+  <table class="table table-bordered" id="table-monitoring">
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>Tanggal</th>
+        <th>Jam Masuk</th>
+        <th>Jam Pulang</th>
+        <th>Kegiatan</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="6" class="text-center" id="empty-notice">Belum ada data logbook untuk periode ini</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

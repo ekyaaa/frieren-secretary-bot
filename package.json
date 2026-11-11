@@ -1,0 +1,12 @@
+{
+  "name": "frieren-discord-logbook",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Frieren Discord Logbook Automation - Multi-Guild Bot, Local Git Agent & DERMAGA Verification",
+  "scripts": {
+    "test": "node --test --experimental-strip-types tests/**/*.test.ts"
+  },
+  "keywords": ["discord", "frieren", "logbook", "dermaga", "automation"],
+  "author": "",
+  "license": "ISC"
+}

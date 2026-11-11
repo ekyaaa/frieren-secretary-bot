@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - DERMAGA POLINEMA</title>
+</head>
+<body>
+  <div class="login-box">
+    <h2>DERMAGA JTI POLINEMA</h2>
+    <form action="/dermaga/login" method="POST" id="login-form">
+      <input type="hidden" name="_token" value="test-csrf-token-abc123xyz" />
+      <div class="form-group">
+        <label for="username">Username / NIM</label>
+        <input type="text" id="username" name="username" required autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" id="btn-login">Masuk</button>
+    </form>
+  </div>
+</body>
+</html>

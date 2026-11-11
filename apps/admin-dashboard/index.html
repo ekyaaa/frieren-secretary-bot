@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frieren Secretary — Admin Dashboard</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --border-color: #334155;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px; }
+    h1 { font-size: 20px; font-weight: 600; color: var(--accent); }
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); }
+    .tab-btn { background: none; border: none; padding: 8px 16px; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; font-weight: 500; }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .metric-value { font-size: 28px; font-weight: bold; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+    th { color: var(--text-muted); font-weight: 600; }
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .login-box { max-width: 400px; margin: 100px auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 32px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-muted); }
+    input[type="text"], input[type="password"] { width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); }
+    button.btn { padding: 10px 16px; background: var(--accent); border: none; border-radius: 6px; color: #0f172a; font-weight: 600; cursor: pointer; width: 100%; }
+    button.btn:hover { background: var(--accent-hover); }
+    .hidden { display: none !important; }
+    .error-text { color: var(--danger); font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div id="login-section" class="container login-box">
+    <h2 style="margin-bottom: 8px; color: var(--accent);">Admin Sign In</h2>
+    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Platform Administration behind Tailscale Funnel</p>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" required autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn" id="login-btn">Authenticate</button>
+      <div id="login-error" class="error-text hidden"></div>
+    </form>
+  </div>
+
+  <div id="dashboard-section" class="container hidden">
+    <header>
+      <div>
+        <h1>Frieren Secretary — Admin Dashboard</h1>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Static env credentials • Operational audit & verification evidence</p>
+      </div>
+      <div>
+        <span id="admin-user-display" style="font-size: 13px; margin-right: 12px; color: var(--text-muted);"></span>
+        <button id="logout-btn" style="padding: 6px 12px; background: #334155; border: none; border-radius: 4px; color: #fff; cursor: pointer;">Logout</button>
+      </div>
+    </header>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="users">Users</button>
+      <button class="tab-btn" data-tab="guilds">Guilds</button>
+      <button class="tab-btn" data-tab="logbooks">Logbooks & Evidence</button>
+      <button class="tab-btn" data-tab="audit">Audit Log</button>
+    </div>
+
+    <div id="tab-overview" class="tab-content">
+      <div class="grid-4">
+        <div class="card">
+          <div style="color: var(--text-muted); font-size: 13px;">Registered Users</div>
+          <div id="metric-users" class="metric-value">0</div>
+        </div>
+        <div class="card">
+          <div style="color: var(--text-muted); font-size: 13px;">Active Guilds</div>
+          <div id="metric-guilds" class="metric-value">0</div>
+        </div>
+        <div class="card">
+          <div style="color: var(--text-muted); font-size: 13px;">Pending Queue Jobs</div>
+          <div id="metric-jobs" class="metric-value">0</div>
+        </div>
+        <div class="card">
+          <div style="color: var(--text-muted); font-size: 13px;">System Status</div>
+          <div class="metric-value" style="color: var(--success); font-size: 20px; margin-top: 14px;">HEALTHY</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-users" class="tab-content hidden">
+      <div class="card">
+        <h3>User Registry</h3>
+        <table>
+          <thead>
+            <tr><th>Discord User ID</th><th>Display Name</th><th>Timezone</th><th>Readiness</th><th>Joined At</th></tr>
+          </thead>
+          <tbody id="users-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-guilds" class="tab-content hidden">
+      <div class="card">
+        <h3>Connected Guilds</h3>
+        <table>
+          <thead>
+            <tr><th>Guild ID</th><th>Server Name</th><th>Checklist Time</th><th>Final Ping</th><th>Enrolled Members</th></tr>
+          </thead>
+          <tbody id="guilds-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-logbooks" class="tab-content hidden">
+      <div class="card">
+        <h3>Recent Submissions & Verified Evidence</h3>
+        <table>
+          <thead>
+            <tr><th>Date</th><th>User ID</th><th>Status</th><th>Updated At</th></tr>
+          </thead>
+          <tbody id="logbooks-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-audit" class="tab-content hidden">
+      <div class="card">
+        <h3>Audit Trail (Redacted)</h3>
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>IP Address</th></tr>
+          </thead>
+          <tbody id="audit-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let csrfToken = '';
+
+    async function checkAuth() {
+      try {
+        const res = await fetch('/admin/api/me');
+        if (res.ok) {
+          const data = await res.json();
+          csrfToken = data.csrfToken;
+          document.getElementById('admin-user-display').textContent = 'Signed in as ' + data.username;
+          showDashboard();
+          loadOverview();
+        } else {
+          showLogin();
+        }
+      } catch {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('login-section').classList.remove('hidden');
+      document.getElementById('dashboard-section').classList.add('hidden');
+    }
+
+    function showDashboard() {
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('dashboard-section').classList.remove('hidden');
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('login-error');
+      errorEl.classList.add('hidden');
+
+      try {
+        const res = await fetch('/admin/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          csrfToken = data.csrfToken;
+          document.getElementById('admin-user-display').textContent = 'Signed in as ' + data.username;
+          showDashboard();
+          loadOverview();
+        } else {
+          errorEl.textContent = data.error || 'Authentication failed.';
+          errorEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorEl.textContent = 'Server connection error.';
+        errorEl.classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/admin/api/logout', { method: 'POST', headers: { 'x-csrf-token': csrfToken } });
+      showLogin();
+    });
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        btn.classList.add('active');
+        const tab = btn.getAttribute('data-tab');
+        document.getElementById('tab-' + tab).classList.remove('hidden');
+
+        if (tab === 'overview') loadOverview();
+        if (tab === 'users') loadUsers();
+        if (tab === 'guilds') loadGuilds();
+        if (tab === 'logbooks') loadLogbooks();
+        if (tab === 'audit') loadAudit();
+      });
+    });
+
+    async function loadOverview() {
+      const res = await fetch('/admin/api/overview');
+      if (res.ok) {
+        const d = await res.json();
+        document.getElementById('metric-users').textContent = d.usersCount;
+        document.getElementById('metric-guilds').textContent = d.guildsCount;
+        document.getElementById('metric-jobs').textContent = d.pendingJobs;
+      }
+    }
+
+    async function loadUsers() {
+      const res = await fetch('/admin/api/users');
+      if (res.ok) {
+        const d = await res.json();
+        const tbody = document.getElementById('users-table-body');
+        tbody.innerHTML = d.users.map(u => `
+          <tr>
+            <td><code>${u.discordUserId}</code></td>
+            <td>${u.discordNameCache || '-'}</td>
+            <td>${u.timezone}</td>
+            <td><span class="badge ${u.setupStatus === 'READY' ? 'badge-success' : 'badge-warning'}">${u.setupStatus}</span></td>
+            <td>${u.createdAt.slice(0, 10)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function loadGuilds() {
+      const res = await fetch('/admin/api/guilds');
+      if (res.ok) {
+        const d = await res.json();
+        const tbody = document.getElementById('guilds-table-body');
+        tbody.innerHTML = d.guilds.map(g => `
+          <tr>
+            <td><code>${g.guildId}</code></td>
+            <td>${g.nameCache || '-'}</td>
+            <td>${g.config ? g.config.checklistTime : '-'}</td>
+            <td>${g.config ? g.config.lastPingTime : '-'}</td>
+            <td>${g.enrolledCount} member(s)</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function loadLogbooks() {
+      const res = await fetch('/admin/api/logbooks');
+      if (res.ok) {
+        const d = await res.json();
+        const tbody = document.getElementById('logbooks-table-body');
+        tbody.innerHTML = d.entries.map(e => `
+          <tr>
+            <td>${e.targetDate}</td>
+            <td><code>${e.userId}</code></td>
+            <td><span class="badge ${e.status === 'VERIFIED' ? 'badge-success' : (e.status === 'DM_BLOCKED' ? 'badge-danger' : 'badge-warning')}">${e.status}</span></td>
+            <td>${e.updatedAt.slice(0, 19).replace('T', ' ')}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function loadAudit() {
+      const res = await fetch('/admin/api/audit');
+      if (res.ok) {
+        const d = await res.json();
+        const tbody = document.getElementById('audit-table-body');
+        tbody.innerHTML = d.events.map(a => `
+          <tr>
+            <td>${a.createdAt.slice(11, 19)}</td>
+            <td>${a.actorType}: ${a.actorId}</td>
+            <td><code>${a.action}</code></td>
+            <td>${a.objectType} ${a.objectId ? '#' + a.objectId.slice(0, 8) : ''}</td>
+            <td>${a.ipAddress || 'internal'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>

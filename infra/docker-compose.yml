@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: frieren_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: frieren
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-frieren_secure_db_pass}
+      POSTGRES_DB: frieren_logbook
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U frieren -d frieren_logbook"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: frieren_api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3100:3100" # Bound to loopback for existing Tailscale Funnel ingress
+    environment:
+      NODE_ENV: production
+      PORT: 3100
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://frieren:${POSTGRES_PASSWORD:-frieren_secure_db_pass}@postgres:5432/frieren_logbook
+      DATABASE_ENCRYPTION_KEY: ${DATABASE_ENCRYPTION_KEY}
+      SESSION_SIGNING_KEY: ${SESSION_SIGNING_KEY}
+      ADMIN_DASH_USERNAME: ${ADMIN_DASH_USERNAME}
+      ADMIN_DASH_PASSWORD: ${ADMIN_DASH_PASSWORD}
+      ADMIN_DASH_SESSION_TTL_MINUTES: ${ADMIN_DASH_SESSION_TTL_MINUTES:-60}
+      AGENT_API_PUBLIC_BASE_URL: ${AGENT_API_PUBLIC_BASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - evidence_data:/app/data/evidence
+
+  bot:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.bot
+    container_name: frieren_bot
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_APPLICATION_ID: ${DISCORD_APPLICATION_ID}
+      DATABASE_URL: postgres://frieren:${POSTGRES_PASSWORD:-frieren_secure_db_pass}@postgres:5432/frieren_logbook
+      DATABASE_ENCRYPTION_KEY: ${DATABASE_ENCRYPTION_KEY}
+      GEMINI_API_KEY_1: ${GEMINI_API_KEY_1}
+      GEMINI_API_KEY_2: ${GEMINI_API_KEY_2}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+    depends_on:
+      api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.worker
+    container_name: frieren_worker
+    restart: unless-stopped
+    environment:
+      DERMAGA_LOGIN_URL: ${DERMAGA_LOGIN_URL:-https://jti.polinema.ac.id/dermaga/login}
+      DERMAGA_MONITORING_URL: ${DERMAGA_MONITORING_URL:-https://jti.polinema.ac.id/dermaga/mahasiswa/monitoring}
+      DATABASE_URL: postgres://frieren:${POSTGRES_PASSWORD:-frieren_secure_db_pass}@postgres:5432/frieren_logbook
+      DATABASE_ENCRYPTION_KEY: ${DATABASE_ENCRYPTION_KEY}
+    volumes:
+      - evidence_data:/app/data/evidence
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  evidence_data:

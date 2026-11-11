@@ -1,0 +1,52 @@
+name: CI Test Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python test dependencies
+        run: |
+          pip install beautifulsoup4 pillow requests
+
+      - name: Run Node DB and Repositories Tests
+        run: |
+          node --experimental-strip-types tests/integration_api.test.ts
+
+      - name: Run Scheduler, Review Gates & AI Tests
+        run: |
+          node --experimental-strip-types tests/test_scheduler_and_ai.test.ts
+
+      - name: Run Guild Isolation & Dashboard Tests
+        run: |
+          node --experimental-strip-types tests/test_guild_and_dashboard.test.ts
+
+      - name: Run Local Agent Scanner & Offline Queue Tests
+        run: |
+          python3 tests/test_local_agent.py
+
+      - name: Run Agent E2E Integration Tests
+        run: |
+          python3 tests/test_agent_api_integration.py
+
+      - name: Run DERMAGA Fresh-Reload Verification Tests
+        run: |
+          python3 tests/test_dermaga_verification.py
