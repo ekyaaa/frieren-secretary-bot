@@ -14,7 +14,7 @@ import hashlib
 import urllib.request
 import urllib.error
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from git_scanner import discover_git_repos, get_commits_for_date, get_repo_branch
 from queue_manager import QueueManager

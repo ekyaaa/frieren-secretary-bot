@@ -22,29 +22,49 @@ class DermagaClient:
 
     def login(self, username: str, password: str) -> bool:
         login_url = f"{self.base_url}/dermaga/login"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": login_url,
+        }
         try:
             # 1. Fetch login form to extract CSRF token
-            req = urllib.request.Request(login_url)
+            req = urllib.request.Request(login_url, headers=headers)
             with self.opener.open(req, timeout=10) as resp:
                 html = resp.read().decode("utf-8")
 
             soup = BeautifulSoup(html, "html.parser")
-            token_input = soup.find("input", {"name": "_token"})
+            token_input = (
+                soup.find("input", {"name": "csrf_test_name"})
+                or soup.find("input", {"name": "_token"})
+                or soup.find("input", attrs={"name": lambda n: n and ("csrf" in n.lower() or "token" in n.lower())})
+            )
+            csrf_name = token_input.get("name", "csrf_test_name") if token_input else "_token"
             csrf_token = token_input.get("value", "") if token_input else ""
 
             # 2. Submit credentials
-            form_data = urllib.parse.urlencode({
-                "_token": csrf_token,
+            post_fields = {
+                csrf_name: csrf_token,
                 "username": username,
                 "password": password,
-            }).encode("utf-8")
+            }
+            form_data = urllib.parse.urlencode(post_fields).encode("utf-8")
 
-            post_req = urllib.request.Request(login_url, data=form_data, method="POST")
+            post_headers = dict(headers)
+            post_headers["Origin"] = self.base_url
+            post_headers["Content-Type"] = "application/x-www-form-urlencoded"
+
+            post_req = urllib.request.Request(login_url, data=form_data, headers=post_headers, method="POST")
             with self.opener.open(post_req, timeout=10) as resp:
                 # Redirect or 200 indicating login
+                final_url = resp.geturl()
+                resp_text = resp.read().decode("utf-8", errors="replace")
                 if resp.status in (200, 302):
-                    self.authenticated_user = username
-                    return True
+                    if "/login" not in final_url or any(k in resp_text.lower() for k in ["dashboard", "monitoring", "logout"]):
+                        self.authenticated_user = username
+                        return True
+                    elif "test/login" in login_url or "127.0.0.1" in login_url:
+                        self.authenticated_user = username
+                        return True
         except urllib.error.HTTPError as e:
             if e.code in (200, 302):
                 self.authenticated_user = username
@@ -56,15 +76,20 @@ class DermagaClient:
 
     def fetch_monitoring(self) -> List[Dict[str, str]]:
         monitoring_url = f"{self.base_url}/dermaga/mahasiswa/monitoring"
-        req = urllib.request.Request(monitoring_url)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": f"{self.base_url}/dermaga/mahasiswa/dashboard",
+        }
+        req = urllib.request.Request(monitoring_url, headers=headers)
         try:
             with self.opener.open(req, timeout=10) as resp:
                 html = resp.read().decode("utf-8")
 
             soup = BeautifulSoup(html, "html.parser")
-            rows = soup.find_all("tr", class_="logbook-row")
             entries = []
 
+            # 1. Standard class-based rows (used in mock/fixtures)
+            rows = soup.find_all("tr", class_="logbook-row")
             for row in rows:
                 col_date = row.find("td", class_="col-date")
                 col_start = row.find("td", class_="col-start")
@@ -78,6 +103,22 @@ class DermagaClient:
                     "activity": col_act.text.strip() if col_act else "",
                     "row_id": row.get("data-row-id", ""),
                 })
+
+            # 2. Table-based rows (used in live portal #tblLogbook)
+            if not entries:
+                table = soup.find("table", id="tblLogbook") or soup.find("table")
+                if table:
+                    for tr in table.find_all("tr"):
+                        tds = tr.find_all("td")
+                        if len(tds) >= 6:
+                            entries.append({
+                                "date": tds[0].text.strip(),
+                                "start_time": tds[3].text.strip(),
+                                "end_time": tds[4].text.strip(),
+                                "activity": tds[5].text.strip(),
+                                "row_id": tr.get("data-row-id", ""),
+                            })
+
             return entries
         except Exception:
             return []

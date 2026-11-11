@@ -104,6 +104,15 @@ class PlaywrightVerifier:
                 matching_row = row
                 break
 
+        if not matching_row:
+            table = soup.find("table", id="tblLogbook") or soup.find("table")
+            if table:
+                for tr in table.find_all("tr"):
+                    tds = tr.find_all("td")
+                    if tds and (date in tds[0].text or (len(tds) > 1 and date in tds[1].text)):
+                        matching_row = tr
+                        break
+
         # If POST returned 200, but fresh DOM has no matching row:
         if not matching_row:
             return {
@@ -115,12 +124,13 @@ class PlaywrightVerifier:
         col_start = matching_row.find("td", class_="col-start")
         col_end = matching_row.find("td", class_="col-end")
         col_act = matching_row.find("td", class_="col-activity")
+        tds = matching_row.find_all("td")
 
         row_data = {
             "date": date,
-            "start_time": col_start.text.strip() if col_start else "",
-            "end_time": col_end.text.strip() if col_end else "",
-            "activity": col_act.text.strip() if col_act else "",
+            "start_time": col_start.text.strip() if col_start else (tds[3].text.strip() if len(tds) >= 6 else ""),
+            "end_time": col_end.text.strip() if col_end else (tds[4].text.strip() if len(tds) >= 6 else ""),
+            "activity": col_act.text.strip() if col_act else (tds[5].text.strip() if len(tds) >= 6 else ""),
             "row_id": matching_row.get("data-row-id", ""),
         }
 

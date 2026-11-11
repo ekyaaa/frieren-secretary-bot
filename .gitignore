@@ -20,6 +20,8 @@ build/
 *.db
 *.db-journal
 *.db-wal
+*.db-shm
+data/*.db*
 .frieren_agent_config.json
 .frieren_agent_queue.db
 

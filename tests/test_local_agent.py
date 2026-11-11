@@ -13,6 +13,7 @@ import unittest
 import json
 import threading
 import time
+from datetime import datetime
 
 # Add apps/local-agent to sys.path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "apps", "local-agent"))
@@ -94,5 +95,4 @@ class TestLocalAgent(unittest.TestCase):
         self.assertEqual(qm.get_pending_count(), 1)
 
 if __name__ == "__main__":
-    from datetime import datetime
     unittest.main()
